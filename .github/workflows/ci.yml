@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: pizza_user
+          POSTGRES_PASSWORD: pizza_password
+          POSTGRES_DB: pizza_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pizza_user -d pizza_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      BOT_TOKEN: 0000000000:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+      TG_URL: https://t.me/example
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: pizza_user
+      DB_PASSWORD: pizza_password
+      DB_NAME: pizza_db
+      DEBUG: "false"
+      LOG_LEVEL: INFO
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Apply database migrations
+        run: alembic upgrade head
+
+      - name: Run tests
+        run: python -m unittest discover -v
+
+      - name: Compile application
+        run: python -m compileall -q .

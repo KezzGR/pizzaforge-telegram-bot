@@ -1,0 +1,51 @@
+x-bot-environment: &bot-environment
+  BOT_TOKEN: ${BOT_TOKEN}
+  TG_URL: ${TG_URL}
+  DB_HOST: db
+  DB_PORT: 5432
+  DB_USER: ${DB_USER}
+  DB_PASSWORD: ${DB_PASSWORD}
+  DB_NAME: ${DB_NAME}
+  DEBUG: ${DEBUG:-false}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+x-bot-service: &bot-service
+  image: pizza-demo-bot:latest
+  build: .
+  environment: *bot-environment
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "127.0.0.1:${DB_EXPOSE_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql_data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    <<: *bot-service
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  bot:
+    <<: *bot-service
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
