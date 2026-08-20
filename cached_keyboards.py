@@ -122,9 +122,9 @@ def get_owner_inline_keyboard() -> InlineKeyboardBuilder:
 
 def get_contact_inline_keyboard() -> InlineKeyboardBuilder:
     keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="📩 Открыть Telegram", url=settings.tg_url)
+    keyboard.button(text="💬 Написать Никите", url=settings.tg_url)
     keyboard.button(
-        text="⬅️ Назад", callback_data=callbacks.ReturnCallback(return_to="start")
+        text="⬅️ На главную", callback_data=callbacks.ReturnCallback(return_to="start")
     )
     keyboard.adjust(1, 1)
     return keyboard
