@@ -8,6 +8,7 @@ class SettingsTests(unittest.TestCase):
         settings = Settings(
             bot_token="test-token",
             tg_url="https://t.me/example",
+            github_url="https://github.com/example/repository",
             db_host="db",
             db_port=5432,
             db_user="pizza@user",
