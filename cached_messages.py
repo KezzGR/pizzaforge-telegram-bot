@@ -73,7 +73,14 @@ start_message = Text(
     "🍕 Заглянем в меню?",
 )
 
-menu_message = Text("🍽 ", Bold("Меню"), "\n\nВыберите категорию:")
+menu_message = Text(
+    "🔥 ",
+    Bold("Меню PizzaForge"),
+    "\n\n",
+    "Что приготовим сегодня?",
+    "\n\n",
+    "Выберите категорию - внутри вас ждут состав и цены.",
+)
 
 owner_message = Text(
     "👨‍💻 ",

@@ -33,12 +33,12 @@ def get_menu_inline_keyboard() -> InlineKeyboardBuilder:
             callback_data=callbacks.MenuCallback(category=category),
         )
     keyboard.button(
-        text="🛒 Корзина", callback_data=callbacks.ReturnCallback(return_to="cart")
+        text="🛒 Моя корзина", callback_data=callbacks.ReturnCallback(return_to="cart")
     )
     keyboard.button(
         text="⬅️ На главную", callback_data=callbacks.ReturnCallback(return_to="start")
     )
-    keyboard.adjust(2, 2, 2)
+    keyboard.adjust(2, 2, 1, 1)
     return keyboard
 
 
