@@ -5,14 +5,16 @@ from sqlalchemy.engine import URL
 class Settings(BaseSettings):
     bot_token: str
     tg_url: str
-    debug: bool = False
-    log_level: str = "INFO"
 
     db_host: str = "localhost"
     db_port: int = 5432
+    db_expose_port: int = 5433
     db_user: str
     db_password: str
     db_name: str
+
+    debug: bool = False
+    log_level: str = "INFO"
 
     @property
     def database_url(self) -> str:
