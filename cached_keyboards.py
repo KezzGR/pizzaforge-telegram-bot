@@ -19,7 +19,7 @@ def get_start_inline_keyboard() -> InlineKeyboardBuilder:
         text="👨‍💻 О проекте", callback_data=callbacks.StartCallback(choice="owner")
     )
     keyboard.button(
-        text="📩 Связаться", callback_data=callbacks.StartCallback(choice="contact")
+        text="💬 Связаться", callback_data=callbacks.StartCallback(choice="contact")
     )
     keyboard.adjust(1, 1, 2)
     return keyboard

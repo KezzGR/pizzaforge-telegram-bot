@@ -1,4 +1,4 @@
-# Pizza Demo Bot
+# PizzaForge
 
 ![Баннер PizzaForge](images/banner.png)
 
