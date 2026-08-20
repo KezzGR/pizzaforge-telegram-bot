@@ -112,11 +112,12 @@ def get_order_confirm_inline_keyboard() -> InlineKeyboardBuilder:
 
 def get_owner_inline_keyboard() -> InlineKeyboardBuilder:
     keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="📩 Написать разработчику", url=settings.tg_url)
+    keyboard.button(text="💬 Обсудить задачу", url=settings.tg_url)
+    keyboard.button(text="💻 GitHub", url=settings.github_url)
     keyboard.button(
-        text="⬅️ Назад", callback_data=callbacks.ReturnCallback(return_to="start")
+        text="⬅️ На главную", callback_data=callbacks.ReturnCallback(return_to="start")
     )
-    keyboard.adjust(1, 1)
+    keyboard.adjust(1, 2)
     return keyboard
 
 

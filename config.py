@@ -5,6 +5,7 @@ from sqlalchemy.engine import URL
 class Settings(BaseSettings):
     bot_token: str
     tg_url: str
+    github_url: str
 
     db_host: str = "localhost"
     db_port: int = 5432
