@@ -1,4 +1,4 @@
-from aiogram.utils.formatting import Bold, Italic, Text
+from aiogram.utils.formatting import Bold, Text
 
 from catalog import CATEGORY_INFO
 from models.cart import CartItem
@@ -64,13 +64,13 @@ def get_order_confirm_message(order_id: int) -> Text:
 
 start_message = Text(
     "👋 ",
-    Bold("Добро пожаловать в PizzaForge!"),
-    "\n\nЭто демонстрационный Telegram-бот пиццерии из портфолио разработчика.",
-    " Здесь можно:\n\n",
-    Italic("🍕 посмотреть меню\n"),
-    Italic("🛒 собрать корзину\n"),
-    Italic("📦 сохранить демо-заказ\n\n"),
-    "Бот не принимает оплату и не оформляет реальную доставку.",
+    Bold("Добро пожаловать в PizzaForge"),
+    "\n\n",
+    "Здесь рождается пицца с огненным характером 🔥",
+    "\n\n",
+    "Выбирайте любимые блюда, добавляйте их в корзину и оформляйте заказ - все прямо в Telegram.",
+    "\n\n",
+    "🍕 Заглянем в меню?",
 )
 
 menu_message = Text("🍽 ", Bold("Меню"), "\n\nВыберите категорию:")

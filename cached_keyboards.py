@@ -13,7 +13,7 @@ def get_start_inline_keyboard() -> InlineKeyboardBuilder:
         text="🍕 Открыть меню", callback_data=callbacks.StartCallback(choice="menu")
     )
     keyboard.button(
-        text="🛒 Корзина", callback_data=callbacks.StartCallback(choice="cart")
+        text="🛒 Моя корзина", callback_data=callbacks.StartCallback(choice="cart")
     )
     keyboard.button(
         text="👨‍💻 О проекте", callback_data=callbacks.StartCallback(choice="owner")
