@@ -26,23 +26,27 @@ async def _show_cart(query: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.message(CommandStart())
-async def start(message: Message) -> None:
+async def start(message: Message, state: FSMContext) -> None:
+    cart_service = CartService.from_state(await state.get_data())
+
     await message.answer_photo(
         FSInputFile("images/banner.png"),
         disable_notification=True,
     )
     await message.answer(
         **messages.start_message.as_kwargs(),
-        reply_markup=keyboards.get_start_inline_keyboard().as_markup(),
+        reply_markup=keyboards.get_start_inline_keyboard(cart_service).as_markup(),
     )
 
 
 @router.callback_query(callbacks.ReturnCallback.filter(F.return_to == "start"))
-async def return_to_start(query: CallbackQuery) -> None:
+async def return_to_start(query: CallbackQuery, state: FSMContext) -> None:
+    cart_service = CartService.from_state(await state.get_data())
+
     await query.answer()
     await query.message.edit_text(
         **messages.start_message.as_kwargs(),
-        reply_markup=keyboards.get_start_inline_keyboard().as_markup(),
+        reply_markup=keyboards.get_start_inline_keyboard(cart_service).as_markup(),
     )
 
 

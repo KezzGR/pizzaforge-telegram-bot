@@ -34,6 +34,13 @@ class CartService:
         """Возвращает копию списка товаров в корзине."""
         return self._cart.copy()
 
+    def get_number_of_items(self) -> int:
+        num = 0
+        for item in self._cart:
+            num += item.quantity
+
+        return num
+
     def add_product(self, product: Product | None) -> CartItem:
         """
         Добавляет товар в корзину. Если товар уже есть, увеличивает количество.

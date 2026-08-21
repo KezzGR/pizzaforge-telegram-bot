@@ -5,15 +5,17 @@ from catalog import CATEGORY_INFO
 from config import settings
 from models.cart import CartItem
 from models.product import Product
+from services.cart_service import CartService
 
 
-def get_start_inline_keyboard() -> InlineKeyboardBuilder:
+def get_start_inline_keyboard(cart_service: CartService) -> InlineKeyboardBuilder:
     keyboard = InlineKeyboardBuilder()
     keyboard.button(
         text="🍕 Открыть меню", callback_data=callbacks.StartCallback(choice="menu")
     )
     keyboard.button(
-        text="🛒 Моя корзина", callback_data=callbacks.StartCallback(choice="cart")
+        text=f"🛒 Корзина · {cart_service.get_number_of_items()}",
+        callback_data=callbacks.StartCallback(choice="cart"),
     )
     keyboard.button(
         text="ℹ️ О проекте", callback_data=callbacks.StartCallback(choice="owner")
