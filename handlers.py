@@ -52,11 +52,13 @@ async def return_to_start(query: CallbackQuery, state: FSMContext) -> None:
 
 @router.callback_query(callbacks.StartCallback.filter(F.choice == "menu"))
 @router.callback_query(callbacks.ReturnCallback.filter(F.return_to == "menu"))
-async def menu(query: CallbackQuery) -> None:
+async def menu(query: CallbackQuery, state: FSMContext) -> None:
+    cart_service = CartService.from_state(await state.get_data())
+
     await query.answer()
     await query.message.edit_text(
         **messages.menu_message.as_kwargs(),
-        reply_markup=keyboards.get_menu_inline_keyboard().as_markup(),
+        reply_markup=keyboards.get_menu_inline_keyboard(cart_service).as_markup(),
     )
 
 

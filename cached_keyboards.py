@@ -27,7 +27,7 @@ def get_start_inline_keyboard(cart_service: CartService) -> InlineKeyboardBuilde
     return keyboard
 
 
-def get_menu_inline_keyboard() -> InlineKeyboardBuilder:
+def get_menu_inline_keyboard(cart_service: CartService) -> InlineKeyboardBuilder:
     keyboard = InlineKeyboardBuilder()
     for category, (emoji, label) in CATEGORY_INFO.items():
         keyboard.button(
@@ -35,10 +35,11 @@ def get_menu_inline_keyboard() -> InlineKeyboardBuilder:
             callback_data=callbacks.MenuCallback(category=category),
         )
     keyboard.button(
-        text="🛒 Моя корзина", callback_data=callbacks.ReturnCallback(return_to="cart")
+        text=f"🛒 Корзина · {cart_service.get_total_quantity()}",
+        callback_data=callbacks.ReturnCallback(return_to="cart"),
     )
     keyboard.button(
-        text="⬅️ На главную", callback_data=callbacks.ReturnCallback(return_to="start")
+        text="🏠 На главную", callback_data=callbacks.ReturnCallback(return_to="start")
     )
     keyboard.adjust(2, 2, 1, 1)
     return keyboard
