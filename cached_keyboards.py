@@ -16,7 +16,7 @@ def get_start_inline_keyboard() -> InlineKeyboardBuilder:
         text="🛒 Моя корзина", callback_data=callbacks.StartCallback(choice="cart")
     )
     keyboard.button(
-        text="👨‍💻 О проекте", callback_data=callbacks.StartCallback(choice="owner")
+        text="ℹ️ О проекте", callback_data=callbacks.StartCallback(choice="owner")
     )
     keyboard.button(
         text="💬 Связаться", callback_data=callbacks.StartCallback(choice="contact")
