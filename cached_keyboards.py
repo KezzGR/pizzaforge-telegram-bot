@@ -14,7 +14,7 @@ def get_start_inline_keyboard(cart_service: CartService) -> InlineKeyboardBuilde
         text="🍕 Открыть меню", callback_data=callbacks.StartCallback(choice="menu")
     )
     keyboard.button(
-        text=f"🛒 Корзина · {cart_service.get_number_of_items()}",
+        text=f"🛒 Корзина · {cart_service.get_total_quantity()}",
         callback_data=callbacks.StartCallback(choice="cart"),
     )
     keyboard.button(
