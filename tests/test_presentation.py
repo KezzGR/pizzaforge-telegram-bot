@@ -12,6 +12,7 @@ class PresentationTests(unittest.TestCase):
             Product(
                 id=1,
                 name="Маргарита",
+                emoji="🍕",
                 category="pizza",
                 price=450,
             )
@@ -31,7 +32,7 @@ class PresentationTests(unittest.TestCase):
         self.assertIn("PostgreSQL", text)
 
     def test_cart_message_contains_total(self) -> None:
-        cart = [CartItem(id=1, name="Маргарита", price=450, quantity=2)]
+        cart = [CartItem(id=1, name="Маргарита", emoji="🍕", price=450, quantity=2)]
 
         text = messages.get_cart_message_text(cart).as_kwargs()["text"]
 

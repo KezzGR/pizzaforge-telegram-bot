@@ -54,6 +54,7 @@ class CartService:
         item = CartItem(
             id=product.id,
             name=product.name,
+            emoji=product.emoji,
             price=product.price,
             quantity=1,
         )

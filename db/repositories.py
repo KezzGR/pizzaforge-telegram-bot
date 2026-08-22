@@ -39,6 +39,7 @@ class ProductRepository:
         return Product(
             id=model.id,
             name=model.name,
+            emoji=model.emoji,
             category=model.category,
             price=model.price,
         )

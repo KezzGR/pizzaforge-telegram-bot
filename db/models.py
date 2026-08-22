@@ -31,6 +31,7 @@ class Product(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
+    emoji: Mapped[str] = mapped_column(String(16), nullable=False)
     category: Mapped[str] = mapped_column(String(50), nullable=False)
     price: Mapped[int] = mapped_column(Integer, nullable=False)
     is_active: Mapped[bool] = mapped_column(
@@ -57,9 +58,7 @@ class Order(Base):
 
     __tablename__ = "orders"
     __table_args__ = (
-        CheckConstraint(
-            "total_price >= 0", name="ck_orders_total_price_non_negative"
-        ),
+        CheckConstraint("total_price >= 0", name="ck_orders_total_price_non_negative"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -96,9 +95,7 @@ class OrderItem(Base):
             "unit_price >= 0", name="ck_order_items_unit_price_non_negative"
         ),
         CheckConstraint("quantity > 0", name="ck_order_items_quantity_positive"),
-        UniqueConstraint(
-            "order_id", "product_id", name="uq_order_items_order_product"
-        ),
+        UniqueConstraint("order_id", "product_id", name="uq_order_items_order_product"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

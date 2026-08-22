@@ -6,31 +6,33 @@ from models.cart import CartItem
 
 def get_cart_message_text(cart: list[CartItem], title: bool = True) -> Text:
     if not cart:
-        if title:
-            return Text(
-                "🛒 ",
-                Bold("Корзина"),
-                "\n\nВаша корзина пуста.\n\n",
-                "Самое время выбрать что-нибудь вкусное! 🍕",
-            )
-        return Text("Корзина пуста.")
+        return Text(
+            "🛒 ",
+            Bold("Корзина пока пуста"),
+            "\n\n",
+            "Добавьте первое блюдо — выбранные позиции и итоговая сумма появятся здесь.",
+        )
 
     lines = [
-        f"{index}. {item.name} — {item.price} ₽ × {item.quantity} = {item.total_price} ₽"
-        for index, item in enumerate(cart, start=1)
+        f"{item.emoji} {item.name}\n{item.price:,} ₽ × {item.quantity:,} = {item.total_price:,} ₽".replace(
+            ",", " "
+        )
+        for item in cart
     ]
     total_sum = sum(item.total_price for item in cart)
 
     if title:
         return Text(
             "🛒 ",
-            Bold("Корзина"),
+            Bold("Ваша корзина"),
             "\n\n",
             "\n\n".join(lines),
-            "\n\nИтого: ",
-            Bold(f"{total_sum} ₽"),
+            "\n\n",
+            Bold(f"Итого: {total_sum:,} ₽".replace(",", " ")),
         )
-    return Text("\n\n".join(lines), "\n\n", Bold(f"Итого: {total_sum} ₽"))
+    return Text(
+        "\n\n".join(lines), "\n\n", Bold(f"Итого: {total_sum:,} ₽".replace(",", " "))
+    )
 
 
 def get_category_message(category: str) -> Text:

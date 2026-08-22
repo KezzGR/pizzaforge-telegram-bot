@@ -9,6 +9,7 @@ class CartServiceTests(unittest.TestCase):
         self.product = Product(
             id=1,
             name="Маргарита",
+            emoji="🍕",
             category="pizza",
             price=450,
         )

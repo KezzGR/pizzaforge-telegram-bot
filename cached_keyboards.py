@@ -48,9 +48,8 @@ def get_menu_inline_keyboard(cart_service: CartService) -> InlineKeyboardBuilder
 def get_products_inline_keyboard(products: list[Product]) -> InlineKeyboardBuilder:
     keyboard = InlineKeyboardBuilder()
     for product in products:
-        emoji = CATEGORY_INFO[product.category][0]
         keyboard.button(
-            text=f"{emoji} {product.name} — {product.price} ₽",
+            text=f"{product.emoji} {product.name} — {product.price} ₽",
             callback_data=callbacks.InCartCallback(product_id=product.id),
         )
     keyboard.button(
@@ -68,19 +67,24 @@ def get_cart_inline_keyboard(cart: list[CartItem]) -> InlineKeyboardBuilder:
     keyboard = InlineKeyboardBuilder()
     if cart:
         keyboard.button(
-            text="📦 Оформить демо-заказ",
+            text="📦 К оформлению",
             callback_data=callbacks.CartEventCallback(event="order"),
         )
         keyboard.button(
             text="🗑 Очистить корзину",
             callback_data=callbacks.CartEventCallback(event="clear"),
         )
+        keyboard.button(
+            text="🍕 Добавить блюда",
+            callback_data=callbacks.ReturnCallback(return_to="menu"),
+        )
+    else:
+        keyboard.button(
+            text="🍕 Выбрать блюда",
+            callback_data=callbacks.ReturnCallback(return_to="menu"),
+        )
     keyboard.button(
-        text="🍕 Перейти в меню",
-        callback_data=callbacks.ReturnCallback(return_to="menu"),
-    )
-    keyboard.button(
-        text="⬅️ На главную", callback_data=callbacks.ReturnCallback(return_to="start")
+        text="🏠 На главную", callback_data=callbacks.ReturnCallback(return_to="start")
     )
     keyboard.adjust(1)
     return keyboard
