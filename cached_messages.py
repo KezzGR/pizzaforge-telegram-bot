@@ -3,23 +3,37 @@ from aiogram.utils.formatting import Bold, Text
 from catalog import CATEGORY_INFO
 from models.cart import CartItem
 
+CART_PAGE_SIZE = 3
+ORDER_PREVIEW_LIMIT = 5
+
 
 def format_money(value: int) -> str:
     return f"{value:,}".replace(",", " ")
 
 
-def _get_cart_lines(cart: list[CartItem]) -> list[str]:
+def get_cart_page_count(cart: list[CartItem]) -> int:
+    return max(1, (len(cart) + CART_PAGE_SIZE - 1) // CART_PAGE_SIZE)
+
+
+def normalize_cart_page(cart: list[CartItem], page: int) -> int:
+    return min(max(page, 0), get_cart_page_count(cart) - 1)
+
+
+def get_cart_page_items(cart: list[CartItem], page: int) -> list[CartItem]:
+    normalized_page = normalize_cart_page(cart, page)
+    start = normalized_page * CART_PAGE_SIZE
+    return cart[start : start + CART_PAGE_SIZE]
+
+
+def _get_compact_cart_lines(cart: list[CartItem]) -> list[str]:
     return [
-        (
-            f"{item.emoji} {item.name}\n"
-            f"{format_money(item.price)} ₽ × {item.quantity} = "
-            f"{format_money(item.total_price)} ₽"
-        )
+        f"{item.emoji} {item.name} × {item.quantity} — "
+        f"{format_money(item.total_price)} ₽"
         for item in cart
     ]
 
 
-def get_cart_message_text(cart: list[CartItem], title: bool = True) -> Text:
+def get_cart_message_text(cart: list[CartItem], page: int = 0) -> Text:
     if not cart:
         return Text(
             "🛒 ",
@@ -28,19 +42,42 @@ def get_cart_message_text(cart: list[CartItem], title: bool = True) -> Text:
             "Добавьте первое блюдо — выбранные позиции и итоговая сумма появятся здесь.",
         )
 
-    lines = _get_cart_lines(cart)
+    normalized_page = normalize_cart_page(cart, page)
+    page_items = get_cart_page_items(cart, normalized_page)
+    lines = _get_compact_cart_lines(page_items)
     total_sum = sum(item.total_price for item in cart)
+    page_count = get_cart_page_count(cart)
+    start = normalized_page * CART_PAGE_SIZE + 1
+    end = start + len(page_items) - 1
+    page_note = (
+        f"\n\nПоказаны позиции {start}–{end} из {len(cart)}."
+        if page_count > 1
+        else ""
+    )
 
-    if title:
-        return Text(
-            "🛒 ",
-            Bold("Ваша корзина"),
-            "\n\n",
-            "\n\n".join(lines),
-            "\n\n",
-            Bold(f"Итого: {format_money(total_sum)} ₽"),
-        )
-    return Text("\n\n".join(lines), "\n\n", Bold(f"Итого: {format_money(total_sum)} ₽"))
+    return Text(
+        "🛒 ",
+        Bold("Ваша корзина"),
+        "\n\n",
+        "\n".join(lines),
+        page_note,
+        "\n\n",
+        Bold(f"Итого: {format_money(total_sum)} ₽"),
+    )
+
+
+def get_cart_item_message(item: CartItem) -> Text:
+    return Text(
+        f"{item.emoji} ",
+        Bold(item.name),
+        "\n\nЦена: ",
+        f"{format_money(item.price)} ₽",
+        "\nКоличество: ",
+        Bold(f"{item.quantity} шт."),
+        "\nСумма: ",
+        Bold(f"{format_money(item.total_price)} ₽"),
+        "\n\nИзмените количество кнопками ниже.",
+    )
 
 
 def get_clear_cart_message(cart: list[CartItem]) -> Text:
@@ -66,11 +103,25 @@ def get_category_message(category: str) -> Text:
 
 
 def get_order_message_text(cart: list[CartItem]) -> Text:
+    preview_items = cart[:ORDER_PREVIEW_LIMIT]
+    hidden_items_count = len(cart) - len(preview_items)
+    hidden_items_note = (
+        f"\nЕщё позиций: {hidden_items_count}"
+        if hidden_items_count > 0
+        else ""
+    )
+    total_quantity = sum(item.quantity for item in cart)
+    total_sum = sum(item.total_price for item in cart)
     return Text(
         "📦 ",
         Bold("Проверьте демо-заказ"),
         "\n\n",
-        get_cart_message_text(cart, title=False),
+        "\n".join(_get_compact_cart_lines(preview_items)),
+        hidden_items_note,
+        "\n\nПозиций: ",
+        f"{len(cart)} · Товаров: {total_quantity}",
+        "\n",
+        Bold(f"Итого: {format_money(total_sum)} ₽"),
         "\n\nПосле подтверждения данные сохранятся в PostgreSQL. ",
         "Оплата не потребуется, ресторан заказ не получит.",
     )

@@ -15,15 +15,27 @@ class InCartCallback(CallbackData, prefix="incart"):
 
 class CartEventCallback(CallbackData, prefix="event"):
     event: str
+    page: int = 0
 
 
-class CartItemCallback(CallbackData, prefix="cartitem"):
+class CartPageCallback(CallbackData, prefix="cartpage"):
+    page: int
+
+
+class CartEditCallback(CallbackData, prefix="cartedit"):
+    product_id: int
+    page: int
+
+
+class CartQuantityCallback(CallbackData, prefix="cartqty"):
     product_id: int
     action: str
+    page: int
 
 
 class OrderCallback(CallbackData, prefix="order"):
     confirm: bool
+    page: int = 0
 
 
 class ReturnCallback(CallbackData, prefix="return"):

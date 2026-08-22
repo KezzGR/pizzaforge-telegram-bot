@@ -1,6 +1,8 @@
+from aiogram.types import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 import callbacks
+import cached_messages as messages
 from catalog import CATEGORY_INFO
 from config import settings
 from models.cart import CartItem
@@ -63,85 +65,164 @@ def get_products_inline_keyboard(
         callback_data=callbacks.ReturnCallback(return_to="cart"),
     )
     keyboard.button(
-        text="⬅️ К категориям",
+        text="← К категориям",
         callback_data=callbacks.ReturnCallback(return_to="menu"),
     )
     keyboard.adjust(*([1] * len(products)), 1, 1)
     return keyboard
 
 
-def get_cart_inline_keyboard(cart: list[CartItem]) -> InlineKeyboardBuilder:
+def get_cart_inline_keyboard(
+    cart: list[CartItem], page: int = 0
+) -> InlineKeyboardBuilder:
     keyboard = InlineKeyboardBuilder()
-    if cart:
-        for item in cart:
-            keyboard.button(
-                text="➖",
-                callback_data=callbacks.CartItemCallback(
-                    product_id=item.id, action="decrease"
-                ),
-            )
-            keyboard.button(
-                text=f"{item.emoji} {item.quantity} шт.",
-                callback_data=callbacks.CartItemCallback(
-                    product_id=item.id, action="details"
-                ),
-            )
-            keyboard.button(
-                text="➕",
-                callback_data=callbacks.CartItemCallback(
-                    product_id=item.id, action="increase"
-                ),
-            )
-        keyboard.button(
-            text="📦 К оформлению",
-            callback_data=callbacks.CartEventCallback(event="order"),
-        )
-        keyboard.button(
-            text="🗑 Очистить корзину",
-            callback_data=callbacks.CartEventCallback(event="clear_request"),
-        )
-        keyboard.button(
-            text="🍕 Добавить блюда",
-            callback_data=callbacks.ReturnCallback(return_to="menu"),
-        )
-    else:
+    if not cart:
         keyboard.button(
             text="🍕 Выбрать блюда",
             callback_data=callbacks.ReturnCallback(return_to="menu"),
         )
-    keyboard.button(
-        text="🏠 На главную", callback_data=callbacks.ReturnCallback(return_to="start")
-    )
-    if cart:
-        keyboard.adjust(*([3] * len(cart)), 1, 1, 1, 1)
-    else:
+        keyboard.button(
+            text="🏠 На главную",
+            callback_data=callbacks.ReturnCallback(return_to="start"),
+        )
         keyboard.adjust(1, 1)
+        return keyboard
+
+    normalized_page = messages.normalize_cart_page(cart, page)
+    page_items = messages.get_cart_page_items(cart, normalized_page)
+    page_count = messages.get_cart_page_count(cart)
+
+    for item in page_items:
+        keyboard.row(
+            InlineKeyboardButton(
+                text=f"{item.emoji} {item.name} · {item.quantity} шт.",
+                callback_data=callbacks.CartEditCallback(
+                    product_id=item.id, page=normalized_page
+                ).pack(),
+            )
+        )
+
+    if page_count > 1:
+        navigation: list[InlineKeyboardButton] = []
+        if normalized_page > 0:
+            navigation.append(
+                InlineKeyboardButton(
+                    text="←",
+                    callback_data=callbacks.CartPageCallback(
+                        page=normalized_page - 1
+                    ).pack(),
+                )
+            )
+        navigation.append(
+            InlineKeyboardButton(
+                text=f"{normalized_page + 1} / {page_count}",
+                callback_data=callbacks.CartPageCallback(page=-1).pack(),
+            )
+        )
+        if normalized_page < page_count - 1:
+            navigation.append(
+                InlineKeyboardButton(
+                    text="→",
+                    callback_data=callbacks.CartPageCallback(
+                        page=normalized_page + 1
+                    ).pack(),
+                )
+            )
+        keyboard.row(*navigation)
+
+    keyboard.row(
+        InlineKeyboardButton(
+            text="📦 К оформлению",
+            callback_data=callbacks.CartEventCallback(
+                event="order", page=normalized_page
+            ).pack(),
+        )
+    )
+    keyboard.row(
+        InlineKeyboardButton(
+            text="🍕 Добавить",
+            callback_data=callbacks.ReturnCallback(return_to="menu").pack(),
+        ),
+        InlineKeyboardButton(
+            text="🗑 Очистить",
+            callback_data=callbacks.CartEventCallback(
+                event="clear_request", page=normalized_page
+            ).pack(),
+        ),
+    )
+    keyboard.row(
+        InlineKeyboardButton(
+            text="🏠 На главную",
+            callback_data=callbacks.ReturnCallback(return_to="start").pack(),
+        )
+    )
     return keyboard
 
 
-def get_clear_cart_inline_keyboard() -> InlineKeyboardBuilder:
+def get_cart_item_inline_keyboard(
+    item: CartItem, page: int
+) -> InlineKeyboardBuilder:
+    keyboard = InlineKeyboardBuilder()
+    keyboard.row(
+        InlineKeyboardButton(
+            text="−",
+            callback_data=callbacks.CartQuantityCallback(
+                product_id=item.id, action="decrease", page=page
+            ).pack(),
+        ),
+        InlineKeyboardButton(
+            text=f"{item.quantity} шт.",
+            callback_data=callbacks.CartQuantityCallback(
+                product_id=item.id, action="details", page=page
+            ).pack(),
+        ),
+        InlineKeyboardButton(
+            text="+",
+            callback_data=callbacks.CartQuantityCallback(
+                product_id=item.id, action="increase", page=page
+            ).pack(),
+        ),
+    )
+    keyboard.row(
+        InlineKeyboardButton(
+            text="🗑 Удалить позицию",
+            callback_data=callbacks.CartQuantityCallback(
+                product_id=item.id, action="remove", page=page
+            ).pack(),
+        )
+    )
+    keyboard.row(
+        InlineKeyboardButton(
+            text="← Вернуться в корзину",
+            callback_data=callbacks.CartPageCallback(page=page).pack(),
+        )
+    )
+    return keyboard
+
+
+def get_clear_cart_inline_keyboard(page: int) -> InlineKeyboardBuilder:
     keyboard = InlineKeyboardBuilder()
     keyboard.button(
         text="🗑 Да, очистить",
-        callback_data=callbacks.CartEventCallback(event="clear_confirm"),
+        callback_data=callbacks.CartEventCallback(event="clear_confirm", page=page),
     )
     keyboard.button(
-        text="↩️ Оставить товары",
-        callback_data=callbacks.CartEventCallback(event="clear_cancel"),
+        text="← Оставить товары",
+        callback_data=callbacks.CartEventCallback(event="clear_cancel", page=page),
     )
     keyboard.adjust(1, 1)
     return keyboard
 
 
-def get_order_inline_keyboard() -> InlineKeyboardBuilder:
+def get_order_inline_keyboard(page: int) -> InlineKeyboardBuilder:
     keyboard = InlineKeyboardBuilder()
     keyboard.button(
         text="✅ Подтвердить заказ",
-        callback_data=callbacks.OrderCallback(confirm=True),
+        callback_data=callbacks.OrderCallback(confirm=True, page=page),
     )
     keyboard.button(
-        text="⬅️ Изменить корзину",
-        callback_data=callbacks.OrderCallback(confirm=False),
+        text="← Изменить корзину",
+        callback_data=callbacks.OrderCallback(confirm=False, page=page),
     )
     keyboard.adjust(1, 1)
     return keyboard
@@ -163,7 +244,7 @@ def get_order_confirm_inline_keyboard() -> InlineKeyboardBuilder:
 
 def get_owner_inline_keyboard() -> InlineKeyboardBuilder:
     keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="💬 Обсудить похожего бота", url=settings.tg_url)
+    keyboard.button(text="💬 Обсудить свой проект", url=settings.tg_url)
     keyboard.button(text="💻 Исходный код на GitHub", url=settings.github_url)
     keyboard.button(
         text="🏠 На главную", callback_data=callbacks.ReturnCallback(return_to="start")

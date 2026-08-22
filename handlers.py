@@ -17,11 +17,17 @@ from services.order_service import OrderService
 router = Router(name=__name__)
 
 
-async def _show_cart(query: CallbackQuery, state: FSMContext) -> None:
+async def _show_cart(
+    query: CallbackQuery, state: FSMContext, page: int = 0
+) -> None:
     cart = CartService.from_state(await state.get_data())
+    items = cart.get_items()
+    normalized_page = messages.normalize_cart_page(items, page)
     await query.message.edit_text(
-        **messages.get_cart_message_text(cart.get_items()).as_kwargs(),
-        reply_markup=keyboards.get_cart_inline_keyboard(cart.get_items()).as_markup(),
+        **messages.get_cart_message_text(items, normalized_page).as_kwargs(),
+        reply_markup=keyboards.get_cart_inline_keyboard(
+            items, normalized_page
+        ).as_markup(),
     )
 
 
@@ -67,6 +73,20 @@ async def menu(query: CallbackQuery, state: FSMContext) -> None:
 async def cart(query: CallbackQuery, state: FSMContext) -> None:
     await query.answer()
     await _show_cart(query, state)
+
+
+@router.callback_query(callbacks.CartPageCallback.filter())
+async def show_cart_page(
+    query: CallbackQuery,
+    callback_data: callbacks.CartPageCallback,
+    state: FSMContext,
+) -> None:
+    if callback_data.page < 0:
+        await query.answer("Листайте корзину стрелками")
+        return
+
+    await query.answer()
+    await _show_cart(query, state, callback_data.page)
 
 
 @router.callback_query(callbacks.StartCallback.filter(F.choice == "owner"))
@@ -139,10 +159,33 @@ async def add_to_cart(
     )
 
 
-@router.callback_query(callbacks.CartItemCallback.filter())
-async def change_cart_item(
+@router.callback_query(callbacks.CartEditCallback.filter())
+async def edit_cart_item(
     query: CallbackQuery,
-    callback_data: callbacks.CartItemCallback,
+    callback_data: callbacks.CartEditCallback,
+    state: FSMContext,
+) -> None:
+    cart_service = CartService.from_state(await state.get_data())
+    try:
+        item = cart_service.get_item(callback_data.product_id)
+    except ValueError as error:
+        await query.answer(str(error), show_alert=True)
+        await _show_cart(query, state, callback_data.page)
+        return
+
+    await query.answer()
+    await query.message.edit_text(
+        **messages.get_cart_item_message(item).as_kwargs(),
+        reply_markup=keyboards.get_cart_item_inline_keyboard(
+            item, callback_data.page
+        ).as_markup(),
+    )
+
+
+@router.callback_query(callbacks.CartQuantityCallback.filter())
+async def change_cart_item_quantity(
+    query: CallbackQuery,
+    callback_data: callbacks.CartQuantityCallback,
     state: FSMContext,
 ) -> None:
     cart_service = CartService.from_state(await state.get_data())
@@ -159,6 +202,7 @@ async def change_cart_item(
         )
         return
 
+    removed = False
     try:
         if callback_data.action == "increase":
             item = cart_service.increase_quantity(callback_data.product_id)
@@ -170,6 +214,10 @@ async def change_cart_item(
                 if removed
                 else f"{item.name}: {item.quantity} шт."
             )
+        elif callback_data.action == "remove":
+            item = cart_service.remove_item(callback_data.product_id)
+            removed = True
+            notification = f"Удалено из корзины: {item.name}"
         else:
             await query.answer("Неизвестное действие", show_alert=True)
             return
@@ -179,11 +227,24 @@ async def change_cart_item(
 
     await state.update_data(cart=cart_service.get_cart_data())
     await query.answer(notification)
-    await _show_cart(query, state)
+    if removed:
+        await _show_cart(query, state, callback_data.page)
+        return
+
+    await query.message.edit_text(
+        **messages.get_cart_item_message(item).as_kwargs(),
+        reply_markup=keyboards.get_cart_item_inline_keyboard(
+            item, callback_data.page
+        ).as_markup(),
+    )
 
 
 @router.callback_query(callbacks.CartEventCallback.filter(F.event == "order"))
-async def order(query: CallbackQuery, state: FSMContext) -> None:
+async def order(
+    query: CallbackQuery,
+    callback_data: callbacks.CartEventCallback,
+    state: FSMContext,
+) -> None:
     cart_service = CartService.from_state(await state.get_data())
     if cart_service.is_empty():
         await query.answer("Корзина пуста", show_alert=True)
@@ -192,12 +253,18 @@ async def order(query: CallbackQuery, state: FSMContext) -> None:
     await query.answer()
     await query.message.edit_text(
         **messages.get_order_message_text(cart_service.get_items()).as_kwargs(),
-        reply_markup=keyboards.get_order_inline_keyboard().as_markup(),
+        reply_markup=keyboards.get_order_inline_keyboard(
+            callback_data.page
+        ).as_markup(),
     )
 
 
 @router.callback_query(callbacks.CartEventCallback.filter(F.event == "clear_request"))
-async def request_clear_cart(query: CallbackQuery, state: FSMContext) -> None:
+async def request_clear_cart(
+    query: CallbackQuery,
+    callback_data: callbacks.CartEventCallback,
+    state: FSMContext,
+) -> None:
     cart_service = CartService.from_state(await state.get_data())
     if cart_service.is_empty():
         await query.answer("Корзина уже пуста", show_alert=True)
@@ -206,7 +273,9 @@ async def request_clear_cart(query: CallbackQuery, state: FSMContext) -> None:
     await query.answer()
     await query.message.edit_text(
         **messages.get_clear_cart_message(cart_service.get_items()).as_kwargs(),
-        reply_markup=keyboards.get_clear_cart_inline_keyboard().as_markup(),
+        reply_markup=keyboards.get_clear_cart_inline_keyboard(
+            callback_data.page
+        ).as_markup(),
     )
 
 
@@ -220,9 +289,13 @@ async def confirm_clear_cart(query: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.callback_query(callbacks.CartEventCallback.filter(F.event == "clear_cancel"))
-async def cancel_clear_cart(query: CallbackQuery, state: FSMContext) -> None:
+async def cancel_clear_cart(
+    query: CallbackQuery,
+    callback_data: callbacks.CartEventCallback,
+    state: FSMContext,
+) -> None:
     await query.answer()
-    await _show_cart(query, state)
+    await _show_cart(query, state, callback_data.page)
 
 
 @router.callback_query(callbacks.OrderCallback.filter(F.confirm == True))
@@ -256,6 +329,10 @@ async def confirm_order(
 
 
 @router.callback_query(callbacks.OrderCallback.filter(F.confirm == False))
-async def cancel_order(query: CallbackQuery, state: FSMContext) -> None:
+async def cancel_order(
+    query: CallbackQuery,
+    callback_data: callbacks.OrderCallback,
+    state: FSMContext,
+) -> None:
     await query.answer()
-    await _show_cart(query, state)
+    await _show_cart(query, state, callback_data.page)

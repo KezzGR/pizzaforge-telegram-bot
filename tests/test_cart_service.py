@@ -78,6 +78,15 @@ class CartServiceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "не находится"):
             cart.increase_quantity(self.product.id)
 
+    def test_item_can_be_removed_from_cart(self) -> None:
+        cart = CartService([])
+        cart.add_product(self.product)
+
+        removed_item = cart.remove_item(self.product.id)
+
+        self.assertEqual(removed_item.name, "Маргарита")
+        self.assertTrue(cart.is_empty())
+
     def test_unavailable_product_is_rejected(self) -> None:
         cart = CartService([])
 

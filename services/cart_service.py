@@ -82,6 +82,12 @@ class CartService:
         item.quantity -= 1
         return item, False
 
+    def remove_item(self, product_id: int) -> CartItem:
+        """Полностью удаляет позицию из корзины."""
+        item = self._find_item(product_id)
+        self._cart.remove(item)
+        return item
+
     def get_total_price(self) -> int:
         """Общая стоимость всех товаров в корзине."""
         return sum(item.total_price for item in self._cart)
