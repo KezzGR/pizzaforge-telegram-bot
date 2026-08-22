@@ -34,6 +34,10 @@ class CartService:
         """Возвращает копию списка товаров в корзине."""
         return self._cart.copy()
 
+    def get_item(self, product_id: int) -> CartItem:
+        """Возвращает позицию корзины по идентификатору товара."""
+        return self._find_item(product_id)
+
     def get_total_quantity(self) -> int:
         """Возвращает общее количество товаров в корзине."""
         return sum(item.quantity for item in self._cart)
@@ -62,6 +66,22 @@ class CartService:
         self._cart.append(item)
         return item
 
+    def increase_quantity(self, product_id: int) -> CartItem:
+        """Увеличивает количество позиции в корзине на единицу."""
+        item = self._find_item(product_id)
+        item.quantity += 1
+        return item
+
+    def decrease_quantity(self, product_id: int) -> tuple[CartItem, bool]:
+        """Уменьшает количество или удаляет последнюю единицу позиции."""
+        item = self._find_item(product_id)
+        if item.quantity == 1:
+            self._cart.remove(item)
+            return item, True
+
+        item.quantity -= 1
+        return item, False
+
     def get_total_price(self) -> int:
         """Общая стоимость всех товаров в корзине."""
         return sum(item.total_price for item in self._cart)
@@ -73,6 +93,12 @@ class CartService:
     def is_empty(self) -> bool:
         """Проверяет, пуста ли корзина."""
         return len(self._cart) == 0
+
+    def _find_item(self, product_id: int) -> CartItem:
+        for item in self._cart:
+            if item.id == product_id:
+                return item
+        raise ValueError("Позиция больше не находится в корзине")
 
     def get_cart_data(self) -> list[dict]:
         """Возвращает сериализуемые данные для FSM-хранилища."""

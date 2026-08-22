@@ -9,7 +9,7 @@ class CartServiceTests(unittest.TestCase):
         self.product = Product(
             id=1,
             name="Маргарита",
-            emoji="🍕",
+            emoji="🍅",
             category="pizza",
             price=450,
         )
@@ -41,6 +41,42 @@ class CartServiceTests(unittest.TestCase):
 
         self.assertTrue(cart.is_empty())
         self.assertEqual(cart.get_cart_data(), [])
+
+    def test_quantity_can_be_increased_from_cart(self) -> None:
+        cart = CartService([])
+        cart.add_product(self.product)
+
+        item = cart.increase_quantity(self.product.id)
+
+        self.assertEqual(item.quantity, 2)
+        self.assertEqual(cart.get_total_quantity(), 2)
+
+    def test_last_unit_is_removed_when_quantity_is_decreased(self) -> None:
+        cart = CartService([])
+        cart.add_product(self.product)
+
+        item, removed = cart.decrease_quantity(self.product.id)
+
+        self.assertEqual(item.name, "Маргарита")
+        self.assertTrue(removed)
+        self.assertTrue(cart.is_empty())
+
+    def test_quantity_is_decreased_without_removing_item(self) -> None:
+        cart = CartService([])
+        cart.add_product(self.product)
+        cart.add_product(self.product)
+
+        item, removed = cart.decrease_quantity(self.product.id)
+
+        self.assertEqual(item.quantity, 1)
+        self.assertFalse(removed)
+        self.assertFalse(cart.is_empty())
+
+    def test_missing_cart_item_is_rejected(self) -> None:
+        cart = CartService([])
+
+        with self.assertRaisesRegex(ValueError, "не находится"):
+            cart.increase_quantity(self.product.id)
 
     def test_unavailable_product_is_rejected(self) -> None:
         cart = CartService([])

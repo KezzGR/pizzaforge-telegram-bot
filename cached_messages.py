@@ -4,6 +4,21 @@ from catalog import CATEGORY_INFO
 from models.cart import CartItem
 
 
+def format_money(value: int) -> str:
+    return f"{value:,}".replace(",", " ")
+
+
+def _get_cart_lines(cart: list[CartItem]) -> list[str]:
+    return [
+        (
+            f"{item.emoji} {item.name}\n"
+            f"{format_money(item.price)} ₽ × {item.quantity} = "
+            f"{format_money(item.total_price)} ₽"
+        )
+        for item in cart
+    ]
+
+
 def get_cart_message_text(cart: list[CartItem], title: bool = True) -> Text:
     if not cart:
         return Text(
@@ -13,12 +28,7 @@ def get_cart_message_text(cart: list[CartItem], title: bool = True) -> Text:
             "Добавьте первое блюдо — выбранные позиции и итоговая сумма появятся здесь.",
         )
 
-    lines = [
-        f"{item.emoji} {item.name}\n{item.price:,} ₽ × {item.quantity:,} = {item.total_price:,} ₽".replace(
-            ",", " "
-        )
-        for item in cart
-    ]
+    lines = _get_cart_lines(cart)
     total_sum = sum(item.total_price for item in cart)
 
     if title:
@@ -28,10 +38,21 @@ def get_cart_message_text(cart: list[CartItem], title: bool = True) -> Text:
             "\n\n",
             "\n\n".join(lines),
             "\n\n",
-            Bold(f"Итого: {total_sum:,} ₽".replace(",", " ")),
+            Bold(f"Итого: {format_money(total_sum)} ₽"),
         )
+    return Text("\n\n".join(lines), "\n\n", Bold(f"Итого: {format_money(total_sum)} ₽"))
+
+
+def get_clear_cart_message(cart: list[CartItem]) -> Text:
+    total_quantity = sum(item.quantity for item in cart)
+    total_sum = sum(item.total_price for item in cart)
     return Text(
-        "\n\n".join(lines), "\n\n", Bold(f"Итого: {total_sum:,} ₽".replace(",", " "))
+        "🗑 ",
+        Bold("Очистить корзину?"),
+        "\n\n",
+        f"Будут удалены все товары: {total_quantity} шт. на сумму ",
+        Bold(f"{format_money(total_sum)} ₽"),
+        ".\n\nЭто действие нельзя отменить.",
     )
 
 
@@ -40,27 +61,28 @@ def get_category_message(category: str) -> Text:
     return Text(
         f"{emoji} ",
         Bold(title),
-        "\n\nВыберите позицию, чтобы добавить её в корзину:",
+        "\n\nНажмите на позицию, чтобы добавить её в корзину. Количество можно изменить позже.",
     )
 
 
 def get_order_message_text(cart: list[CartItem]) -> Text:
     return Text(
         "📦 ",
-        Bold("Демо-заказ"),
-        "\n\nПроверьте состав заказа:\n\n",
+        Bold("Проверьте демо-заказ"),
+        "\n\n",
         get_cart_message_text(cart, title=False),
-        "\n\nПосле подтверждения заказ сохранится в демонстрационной базе данных.",
-        " Никакая оплата или доставка не выполняется.",
+        "\n\nПосле подтверждения данные сохранятся в PostgreSQL. ",
+        "Оплата не потребуется, ресторан заказ не получит.",
     )
 
 
 def get_order_confirm_message(order_id: int) -> Text:
     return Text(
         "✅ ",
-        Bold(f"Демо-заказ №{order_id} сохранён"),
-        "\n\nДанные записаны в PostgreSQL, но заказ не передаётся ресторану",
-        " и не требует оплаты.\n\nСпасибо за тестирование проекта!",
+        Bold(f"Демо-заказ №{order_id} оформлен"),
+        "\n\nСценарий завершён: данные сохранены в PostgreSQL, а корзина очищена.\n\n",
+        "Оплата не списывалась, заказ не передан ресторану.\n\n",
+        Bold("Спасибо, что протестировали PizzaForge!"),
     )
 
 
@@ -81,23 +103,25 @@ menu_message = Text(
 )
 
 owner_message = Text(
-    "👨‍💻 ",
-    Bold("О проекте"),
+    "ℹ️ ",
+    Bold("О проекте PizzaForge"),
     "\n\n",
-    "PizzaForge — демонстрационный бот пиццерии и пример Telegram-решения для бизнеса.\n\n",
-    "🍕 Меню · корзина · оформление заказа\n",
-    "🐍 Python · aiogram · SQLAlchemy\n",
-    "🐘 PostgreSQL · Alembic\n",
-    "🐳 Docker Compose · тесты · CI/CD\n\n",
-    "Бот работает на удалённом сервере, и обновляется автоматически.\n\n",
-    Bold("Хотите похожего? Обсудим вашу задачу."),
+    "Это работающий демо-бот, а не макет. Он показывает полный путь клиента: ",
+    "меню, корзину, расчёт суммы и оформление заказа.\n\n",
+    Bold("Что под капотом:"),
+    "\n🐍 Python · aiogram · SQLAlchemy",
+    "\n🐘 PostgreSQL · Alembic",
+    "\n🐳 Docker Compose · тесты · CI/CD\n\n",
+    "Проект развёрнут на удалённом сервере, а изменения проходят автоматические проверки.\n\n",
+    Bold("Исходный код открыт на GitHub."),
 )
 
 contact_message = Text(
     "💬 ",
-    Bold("Обсудим ваш проект"),
+    Bold("Обсудим ваш Telegram-бот"),
     "\n\n",
-    "Нужен Telegram-бот для бизнеса или есть идея, которую хочется реализовать?\n\n",
-    "Расскажите о задаче — я помогу продумать сценарий и предложу подходящее решение.\n\n",
-    Bold("Напишите мне — обсудим детали."),
+    "Техническое задание не нужно. Достаточно описать идею своими словами.\n\n",
+    "Я помогу продумать сценарий и оценить объём работы.\n\n",
+    "Кнопка откроет чат и подставит готовое сообщение — ",
+    Bold("оно не отправится автоматически."),
 )

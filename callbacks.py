@@ -17,6 +17,11 @@ class CartEventCallback(CallbackData, prefix="event"):
     event: str
 
 
+class CartItemCallback(CallbackData, prefix="cartitem"):
+    product_id: int
+    action: str
+
+
 class OrderCallback(CallbackData, prefix="order"):
     confirm: bool
 
